@@ -1,0 +1,60 @@
+% complie with xelatex
+\documentclass[hyperref, twocolumn, 9pt]{extarticle}
+\usepackage{extsizes}
+\usepackage[a4paper, landscape, top=1.0cm, bottom=1.5cm, left=1.5cm, right=1.5cm]{geometry}
+\usepackage{ctex}
+\usepackage{listings}
+\usepackage{lipsum}
+\usepackage{xcolor}
+\usepackage{fontspec}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\hypersetup{hidelinks}
+\setlength{\columnsep}{1cm}
+\setlength{\parindent}{0pt}
+\linespread{1}
+\lstset{
+    basicstyle=\fontspec{Consolas}\small, % 基本字体样式
+    keywordstyle=\bfseries\color{purple}\fontseries{b}\selectfont, % 关键字颜色
+    commentstyle=\color{green!30!gray}, % 注释颜色
+    stringstyle=\itshape\color{blue}, % 字符串颜色
+    numbers=left, % 显示行号
+    numberstyle=\tiny\color{gray}, % 行号样式
+    breaklines=true, % 自动换行
+    tabsize=4, % 制表符宽度
+    extendedchars=true, % 支持非 ASCII 字符（中文可能还需额外设置）
+    morekeywords={constexpr, nullptr, override}, % 自定义关键
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+
+    {\fontsize{25pt}{28pt}\bfseries 老司机带带我\par}
+    \vspace{0.5cm}
+    {\fontsize{20pt}{17pt}\rm old driver take me\par}
+
+    \vspace{10cm}
+
+    {\fontsize{15pt}{17pt}\rm 吴子健 \quad 林宇煌 \quad 朱芝毅 \par}
+    \vspace{0.2cm}
+
+    {\fontsize{15pt}{17pt}\rm \today}
+    \vspace{2cm}
+\end{titlepage}
+
+\tableofcontents
+
+\include{sections/basic_algorithms}
+\include{sections/data_structure}
+\include{sections/math}
+\include{sections/strings}
+\include{sections/graphs}
+\include{sections/geometry}
+
+\end{document}
