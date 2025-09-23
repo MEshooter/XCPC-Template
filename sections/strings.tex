@@ -1,0 +1,394 @@
+\section{字符串}
+
+\subsection{Hash}
+
+\begin{lstlisting}[language=C++]
+constexpr int P = 131, mod1 = 998244353, mod2 = 1e9 + 7;
+struct Hash {
+    vector<int> p1, h1;
+    vector<int> p2, h2;
+    Hash() {}
+    Hash(string s) {
+        init(s);
+    }
+    void init(string s) {
+        int n = s.size();
+        p1.assign(n, 1);
+        h1.assign(n, 0);
+        // p2.assign(n, 1);
+        // h2.assign(n, 0);
+
+        for (int i = 1; i < n; i++) {
+            p1[i] = p1[i - 1] * P % mod1;
+            h1[i] = (h1[i - 1] * P % mod1 + s[i]) % mod1;
+
+            // p2[i] = p2[i - 1] * P % mod2;
+            // h2[i] = (h2[i - 1] * P % mod2 + s[i]) % mod2;
+        }
+    }
+    int substr_hash1(int l, int r) {
+        int hash1 = ((h1[r] - h1[l - 1] * p1[r - l + 1] % mod1) % mod1 + mod1) % mod1;
+        return hash1;
+    }
+    int substr_hash2(int l, int r) {
+        int hash2 = ((h2[r] - h2[l - 1] * p2[r - l + 1] % mod2) % mod2 + mod2) % mod2;
+        return hash2;
+    }
+};
+\end{lstlisting}
+
+\subsection{KMP}
+
+前缀函数 $\pi[i]$：前 $i$ 个字符中，能够匹配的最长真前缀与真后缀。
+
+若当前位置失配，则（在 $s[0\dots \pi[j]-1]$ 中）寻找次长的相匹配的前后缀。
+
+转移：$j^{(k)}=\pi[j^{(k-1)}-1]$ (下标从0开始)。
+
+KMP：查找 s 在 t 中的所有出现，对 s+'\#'+t 求前缀函数。
+
+\begin{lstlisting}[language = C++]
+int n = str.size(), m = text.size();
+s = str+'#'+text;
+// 求前缀函数
+for (int i = 1; i < n; i++) {
+    int j = pi[i - 1];
+    while (j > 0 && s[i] != s[j]) j = pi[j - 1];
+    if (s[i] == s[j]) j++;
+    pi[i] = j;
+}
+// 统计答案
+vector<int> v;
+for(int i = n+1; i < s.size(); i++)
+    if(pi[i] == n) v.push_back(i-2*n);
+\end{lstlisting}
+
+\subsection{AC 自动机}
+
+$fail[u]$：状态 $u$ 的最长真后缀
+
+$ch[u][i]$：字典图的边，若在字典树中不存在该边，则连向 $ch[fail[u]][i]$
+
+\begin{lstlisting}[language = C++]
+// 统计每一个模式串 $t_i$ 在文本串 $s$ 中出现的次数
+struct AC_automation{
+    int m, tot;
+    
+    struct node{
+        int fail, val, id, ch[26];
+        node(){
+            fail = val = id = 0;
+            memset(ch, 0, sizeof(ch));
+        }
+    }tr[N];
+    
+    AC_automation() {m = tot = 0;}
+    // 构建字典树
+    void insert(const string &t, int &idx){
+        int p = 0;
+        for(int i = 0; i < t.size(); i++){
+            int &nxt = tr[p].ch[t[i]-'a'];
+            if(nxt) p = nxt;
+            else p = nxt = ++tot;
+        }
+        if(!tr[p].id) tr[p].id = ++m;
+        idx = tr[p].id;
+    }
+    // 构建字典图
+    void build(){
+        queue<int> q;
+        for(int i = 0; i < 26; i++)
+            if(tr[0].ch[i]){
+                q.push(tr[0].ch[i]);
+                g[0].push_back(tr[0].ch[i]);
+            }
+        while(q.size()){
+            int p = q.front();
+            q.pop();
+            for(int i = 0; i < 26; i++){
+                int &nxt = tr[p].ch[i];
+                if(nxt){
+                    tr[nxt].fail = tr[tr[p].fail].ch[i];
+                    g[tr[nxt].fail].push_back(nxt);
+                    q.push(nxt);
+                }
+                else nxt = tr[tr[p].fail].ch[i];
+            }
+        }
+    }
+    // 匹配最长后缀并打标记
+    void query(const string &s){
+        int p = 0;
+        for(int i = 0; i <= m; i++)
+            tr[i].val = 0;
+        for(int i = 0; i < s.size(); i++){
+            p = tr[p].ch[s[i]-'a'];
+            if(p) tr[p].val++;
+        }
+    }
+    // dfs在fail树上做后缀和
+    void dfs(int u){
+        for(auto v: g[u]){
+            dfs(v);
+            tr[u].val += tr[v].val;
+        }
+        if(tr[u].id) ans[tr[u].id] = tr[u].val;
+    }
+};
+\end{lstlisting}
+
+ACAM 
+
+\begin{lstlisting}[language=C++]
+struct ACAM {
+    static constexpr int ALPHABET_SIZE = 26;
+    struct Node {
+        int fail;
+        array<int, ALPHABET_SIZE> ch;
+        int len, cnt;
+        Node() : fail{}, ch{}, len{}, cnt{} {}
+    };
+    int tot;
+    vector<Node> t;
+    ACAM() {
+        init();
+    }
+    void init() {
+        tot = 1;
+        t.assign(1, Node());
+    }
+    int newNode() {
+        tot++;
+        t.emplace_back();
+        return tot - 1;
+    }
+    void insert(string s) {
+        int p = 0;
+        for (int i = 0; i < s.size(); i++) {
+            int c = s[i] - 'a';
+            if (!t[p].ch[c]) {
+                t[p].ch[c] = newNode();
+            }
+            p = t[p].ch[c];
+        }
+        t[p].len = s.size();
+        t[p].cnt++;
+    }
+    void build() {
+        queue<int> q;
+        for (int c = 0; c < ALPHABET_SIZE; c++) {
+            if (t[0].ch[c]) {
+                q.push(t[0].ch[c]);
+            }
+        }
+        while (!q.empty()) {
+            auto u = q.front();
+            q.pop();
+            for (int c = 0; c < ALPHABET_SIZE; c++) {
+                if (t[u].ch[c]) {
+                    t[t[u].ch[c]].fail = t[t[u].fail].ch[c];
+                    q.push(t[u].ch[c]);
+                } else {
+                    t[u].ch[c] = t[t[u].fail].ch[c];
+                }
+            }
+        }
+    }
+    Node& operator[](const int &id) {
+        return t[id];
+    }
+};
+// by lyh
+\end{lstlisting}
+
+\subsection{SAM}
+
+\begin{lstlisting}[language=C++]
+struct SAM {
+    static constexpr int ALPHABET_SIZE = 26;
+    struct Node {
+        int len = 0;
+        int link = 0;
+        array<int, ALPHABET_SIZE> ch;
+        int endpos = -1;
+    };
+    int last;
+    vector<Node> t;
+    SAM() {
+        init();
+    }
+    void init() {
+        last = 1;
+        t.assign(2, Node());
+    }
+    int newNode() {
+        t.emplace_back();
+        return t.size() - 1;
+    }
+    void extend(int c, int id) {
+        int p = last, cur = newNode();
+        t[cur].len = t[p].len + 1;
+        for (; p && !t[p].ch[c]; p = t[p].link) {
+            t[p].ch[c] = cur;
+        }
+        if (!p) {
+            t[cur].link = 1;
+        } else {
+            int q = t[p].ch[c];
+            if (t[q].len == t[p].len + 1) {
+                t[cur].link = q;
+            } else {
+                int r = newNode();
+                t[r].len = t[p].len + 1;
+                t[r].link = t[q].link;
+                t[r].ch = t[q].ch;
+                t[cur].link = t[q].link = r;
+                for (; p && t[p].ch[c] == q; p = t[p].link) {
+                    t[p].ch[c] = r;
+                }
+            }
+        }
+        last = cur;
+        t[cur].endpos = id;
+    }
+    Node& operator[](const int &id) {
+        return t[id];
+    }
+};
+\end{lstlisting}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[scale=0.25]{lyh/SAM.png}
+    \caption{SAM}
+\end{figure}
+
+\subsection{SA}
+
+\begin{lstlisting}[language=C++]
+struct SuffixArray {
+    int m = 127;
+    int n;
+    vector<int> sa, rk, height;
+    SuffixArray(const string &s) {
+        n = s.size();
+        sa.resize(2 * n + 1);
+        rk.resize(2 * n + 1);
+        height.resize(n + 1);
+        vector<int> cnt(m + 1);
+        for (int i = 1; i <= n; i++) {
+            cnt[rk[i] = s[i - 1]]++;
+        }
+        for (int i = 1; i <= m; i++) {
+            cnt[i] += cnt[i - 1];
+        }
+        for (int i = n; i >= 1; i--) {
+            sa[cnt[rk[i]]--] = i;
+        }
+        vector<int> id(n + 1), oldrk;
+        for (int w = 1, p; ; w <<= 1, m = p) {
+            int cur = 0;
+            for (int i = n - w + 1; i <= n; i++) {
+                id[++cur] = i;
+            }
+            for (int i = 1; i <= n; i++) {
+                if (sa[i] > w) {
+                    id[++cur] = sa[i] - w;
+                }
+            }
+            cnt.assign(m + 1, 0);
+            for (int i = 1; i <= n; i++) {
+                cnt[rk[i]]++;
+            }
+            for (int i = 1; i <= m; i++) {
+                cnt[i] += cnt[i - 1];
+            }
+            for (int i = n; i >= 1; i--) {
+                sa[cnt[rk[id[i]]]--] = id[i];
+            }
+            oldrk = rk;
+            p = 0;
+            for (int i = 1; i <= n; i++) {
+                if (oldrk[sa[i]] == oldrk[sa[i - 1]] && 
+                    oldrk[sa[i] + w] == oldrk[sa[i - 1] + w]) {
+                    rk[sa[i]] = p;
+                } else {
+                    rk[sa[i]] = ++p;
+                }
+            }
+            if (p == n) break;
+        }
+        for (int i = 1, j = 0; i <= n; i++) {
+            if (rk[i] == 1) continue;
+            if (j) j--;
+            while (s[i + j - 1] == s[sa[rk[i] - 1] + j - 1]) {
+                j++;
+            }
+            height[rk[i]] = j;
+        }
+    }
+    int& operator[](const int &id) {
+        return sa[id];
+    }
+};
+// by lyh
+\end{lstlisting}
+
+\subsection{PAM}
+
+\begin{lstlisting}[language=C++]
+struct PAM {
+    constexpr static int ALPHABET_SIZE = 26;
+    struct Node {
+        int len;
+        int link;
+        array<int, ALPHABET_SIZE> ch;
+    };
+    vector<Node> t;
+    PAM() {
+        init();
+    }
+    void init() {
+        t.assign(2, Node());
+        t[1].len = -1;
+        t[1].link = -1;
+        t[0].link = 1;
+    }
+    int newNode() {
+        t.emplace_back();
+        return t.size() - 1;
+    }
+    int extend(const string &s, int p, int i) {
+        while (i - t[p].len - 1 < 0 || s[i - t[p].len - 1] != s[i]) {
+            p = t[p].link;
+        }
+        int c = s[i] - 'a';
+        if (!t[p].ch[c]) {
+            int cur = newNode();
+            t[cur].len = t[p].len + 2;
+            t[p].ch[c] = cur;
+            if (p == 1) {
+                t[cur].link = 0;
+            } else {
+                p = t[p].link;
+                while (i - t[p].len - 1 < 0 || s[i - t[p].len - 1] != s[i]) {
+                    p = t[p].link;
+                }
+                t[cur].link = t[p].ch[c];
+            }
+            return cur;
+        }
+        return t[p].ch[c];
+    }
+    Node &operator[](const int &id) {
+        return t[id];
+    }
+};
+// by lyh
+\end{lstlisting}
+
+% \begin{figure}
+%     \centering
+%     \includegraphics[scale=0.4]{lyh/PAM.png}
+%     \caption{PAM}
+% \end{figure}

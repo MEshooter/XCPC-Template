@@ -1,0 +1,373 @@
+\section{数学}
+
+\subsection{组合数线性预处理}
+
+\begin{lstlisting}[language=C++]
+ll fac[N], inv[N], inv_fac[N];
+void binom_init(int n) {
+    fac[0] = fac[1] = inv[0] = inv[1] = inv_fac[0] = inv_fac[1] = 1;
+    for(int i = 2; i <= n; i++) {
+        fac[i] = fac[i - 1] * i % mod;
+        inv[i] = (mod - mod / i) * inv[mod % i] % mod;
+    }
+    for(int i = 2; i <= n; i++) {
+        inv_fac[i] = inv_fac[i - 1] * inv[i] % mod;
+    }
+}
+int binom(int n, int m) {
+    if (n < 0 || m < 0 || n < m) {
+        return 0;
+    }
+    return fac[n] * inv_fac[m] % mod * inv_fac[n - m] % mod;
+}
+// by lyh
+\end{lstlisting}
+
+\subsection{线性筛}
+
+\begin{lstlisting}[language=C++]
+vector<int> primes, minp;
+vector<int> phi;
+void sieve(int n) {
+    minp.assign(n + 1, 0);
+    phi.assign(n + 1, 1);
+    for (int i = 2; i <= n; i++) {
+        if (!minp[i]) {
+            primes.push_back(minp[i] = i);
+            phi[i] = i - 1;
+        }
+        for (auto p : primes) {
+            if (i * p > n) break;
+            minp[i * p] = p;
+            phi[i * p] = phi[i] * phi[p];
+            if (p == minp[i]) {
+                phi[i * p] = phi[i] * p;
+                break;
+            }
+        }
+    }
+}
+// by lyh
+\end{lstlisting}
+
+\subsection{扩展欧几里得}
+
+$ax+by=c$ 有解 $\leftrightarrow (a,b)|c$，记 $x_0, y_0$ 为方程 $ax+by=(a,b)$ 的一组解，则原方程的解集为：
+\[
+    x = \dfrac{c}{g}x_0+k\dfrac{b}{g},\quad y = \dfrac{c}{g}y_0-k\dfrac{a}{g},\quad k\in \mathbb{Z}
+\]
+
+\begin{lstlisting}[language = C++]
+ll exgcd(ll a, ll b, ll &x, ll &y){
+    if(b == 0){
+        x = 1; y = 0;
+        return a;
+    }
+    ll g = exgcd(b, a%b, x, y);
+    tie(x, y) = make_tuple(y, x-a/b*y);
+    return g;
+}
+\end{lstlisting}
+
+\subsection{高斯消元}
+
+\begin{lstlisting}[language = C++]
+double* solve(int n, double a[][N], double b[], int &state){
+    state = 1;
+    static double x[N];
+    int rank = 0;
+    memset(x, 0, sizeof(x));
+    for(int i = 1; i <= n; i++){
+        for(int j = 1; j <= n; j++){
+            // 注意前一个未知数系数都为0的情况
+            if(j < i && fabs(a[j][j]) > eps) continue;
+            if(fabs(a[j][i]) < eps) continue;
+            for(int k = 1; k <= n; k++) swap(a[i][k], a[j][k]);
+            swap(b[i], b[j]);
+            break;
+        }
+        if(fabs(a[i][i]) < eps) continue;
+        ++rank;
+        for(int j = 1; j <= n; j++){
+            if(i == j || fabs(a[j][i]) < eps) continue;
+            double r = a[j][i]/a[i][i];
+            for(int k = i; k <= n; k++)
+                a[j][k] -= a[i][k]*r;
+            b[j] -= b[i]*r;
+        }
+    }
+    for(int i = 1; i <= n; i++)
+        if(fabs(a[i][i]) < eps && fabs(b[i]) > eps)
+            {state = -1; return x;}
+    if(rank < n) {state = 0; return x;}
+    for(int i = 1; i <= n; i++)
+        x[i] = b[i]/a[i][i];
+    return x;
+}
+// 调用：double *x = solve(a, b, n, state);
+\end{lstlisting}
+
+\subsection{线性基}
+
+A. 使用高斯消元构造基线性基，常数偏大，可处理第k小值。
+\begin{lstlisting}[language = C++]
+struct linear_base{
+    using ll = long long;
+    #define B 62
+    ll a[B];
+    linear_base(){
+        memset(a, 0, sizeof(a));
+    }
+    void insert(ll x){
+        for(int i = B-1; i >= 0; i--){
+            if((x>>i&1) == 0) continue;
+            if(a[i]) x ^= a[i];
+            else{
+                // 用 a[0...i - 1] 消去 x 的第 [0, i) 位上的 1
+                for(int j = 0; j < i; j++)
+                    if(x>>j&1) x ^= a[j];
+                // 用 x 消去 a[i + 1...B-1] 的第 i 位上的 1
+                for(int j = i+1; j < B; j++)
+                    if(a[j]>>i&1) a[j] ^= x;
+                a[i] = x;
+                return;
+            }
+        }
+    }
+    ll get_max(){
+        ll res = 0;
+        for(int i = 0; i < B; i++)
+            res ^= a[i];
+        return res;
+    }
+};
+\end{lstlisting}
+
+B. 一般线性基，常数较小
+\begin{lstlisting}[language = C++]
+struct linear_base{
+    using ll = long long;
+    #define B 62
+    ll a[B];
+    linear_base(){
+        memset(a, 0, sizeof(a));
+    }
+    void insert(ll x){
+        for(int i = B-1; i >= 0; i--){
+            if(x>>i&1){
+                if(a[i]) x ^= a[i];
+                else {a[i] = x; return;}
+            }
+        }
+    }
+    ll get_max(){
+        ll res = 0;
+        for(int i = B-1; i >= 0; i--)
+            res = max(res, res^a[i]);
+        return res;
+    }
+};
+\end{lstlisting}
+
+\subsection{快速卷积}
+
+\subsubsection{FFT}
+
+\begin{lstlisting}[language=C++]
+using ld = double;
+const ld PI = acos(-1);
+struct Complex {
+    ld x, y;
+    Complex(ld x_ = 0, ld y_ = 0) : x(x_), y(y_) {}
+    friend Complex operator+(const Complex &u, const Complex &v) {
+        return {u.x + v.x, u.y + v.y};
+    }
+    friend Complex operator-(const Complex &u, const Complex &v) {
+        return {u.x - v.x, u.y - v.y};
+    }
+    friend Complex operator*(const Complex &u, const Complex &v) {
+        return {u.x * v.x - u.y * v.y, u.x * v.y + u.y * v.x};
+    }
+};
+
+vector<int> rev;
+void FFT(vector<Complex> &A, bool inverse) {
+    int n = A.size();
+    if ((int)rev.size() != n) {
+        rev.resize(n);
+        for (int i = 1; i < n; i++) {
+            rev[i] = rev[i >> 1] >> 1 | (i & 1) << (__builtin_ctzll(n) - 1);
+        }
+    }
+    for (int i = 0; i < n; i++) {
+        if (i < rev[i]) {
+            swap(A[i], A[rev[i]]);
+        }
+    }
+    for (int len = 2; len <= n; len <<= 1) {
+        Complex wn(cos(2 * PI / len), sin(2 * PI / len) * (inverse ? -1 : 1));
+        for (int j = 0; j < n; j += len) {
+            Complex w(1, 0);
+            for (int k = j; k < j + len / 2; k++, w = w * wn) {
+                Complex u = A[k], v = w * A[k + len / 2];
+                A[k] = u + v;
+                A[k + len / 2] = u - v;
+            }
+        }
+    }
+    if (inverse) {
+        for (int i = 0; i < n; i++) {
+            A[i].x = (int)(A[i].x / n + 0.5);
+        }
+    }
+}
+// by lyh
+\end{lstlisting}
+
+\subsubsection{NTT}
+
+\begin{lstlisting}[language=C++]
+constexpr int mod = 998244353;
+int g0 = 3, g1;
+vector<int> rev;
+void NTT(vector<int> &A, bool inverse) {
+    int n = A.size();
+    if ((int)rev.size() != n) {
+        rev.resize(n);
+        for (int i = 1; i < n; i++) {
+            rev[i] = rev[i >> 1] >> 1 | (i & 1) << (__builtin_ctzll(n) - 1);
+        }
+    }
+    for (int i = 0; i < n; i++) {
+        if (i < rev[i]) {
+            swap(A[i], A[rev[i]]);
+        }
+    }
+    for (int len = 2; len <= n; len <<= 1) {
+        int gn = power(inverse ? g1 : g0, (mod - 1) / len);
+        for (int j = 0; j < n; j += len) {
+            int g = 1;
+            for (int k = j; k < j + len / 2; k++, g = g * gn % mod) {
+                int u = A[k], v = g * A[k + len / 2] % mod;
+                A[k] = (u + v) % mod;
+                A[k + len / 2] = (u - v + mod) % mod;
+            }
+        }
+    }
+    if (inverse) {
+        int inv = power(n, mod - 2);
+        for (int i = 0; i < n; i++) {
+            A[i] = A[i] * inv % mod;
+        }
+    }
+}
+
+void solve() {
+    g1 = power(g0, mod - 2);
+    int n, m;
+    cin >> n >> m;
+    
+    vector<int> a(n + 1), b(m + 1);
+    for (int i = 0; i <= n; i++) {
+        cin >> a[i];
+    }
+    for (int i = 0; i <= m; i++) {
+        cin >> b[i];
+    }
+    int len = 1;
+    while (len < n + m + 1) {
+        len <<= 1;
+    }
+    a.resize(len);
+    b.resize(len);
+    NTT(a, 0);
+    NTT(b, 0);
+    vector<int> c(len);
+    for (int i = 0; i < len; i++) {
+        c[i] = a[i] * b[i] % mod;
+    }
+    NTT(c, 1);
+    for (int i = 0; i <= n + m; i++) {
+        cout << c[i] << " \n"[i == len - 1];
+    }
+}
+// by lyh
+\end{lstlisting}
+
+\subsubsection{FWT}
+
+\begin{lstlisting}[language=C++]
+void Or(int n, int *a, int type) {
+    for (int i = 1; i < n; i <<= 1) 
+        for (int j = 0; j < n; j += i << 1) 
+            for (int k = 0; k < i; k++) 
+                (a[i + j + k] += a[j + k] * type + mod) %= mod;
+}
+void And(int n, int *a, int type) {
+    for (int i = 1; i < n; i <<= 1) 
+        for (int j = 0; j < n; j += i << 1) 
+            for (int k = 0; k < i; k++) 
+                (a[j + k] += a[i + j + k] * type + mod) %= mod;
+}
+void Xor(int n, int *a, int type) {
+    for (int i = 1; i < n; i <<= 1) 
+        for (int j = 0; j < n; j += i << 1) 
+            for (int k = 0; k < i; k++) {
+                (a[j + k] += a[i + j + k]) %= mod;
+                (a[i + j + k] = a[j + k] - 2 * a[i + j + k] % mod + mod) %= mod;
+                (a[j + k] *= type) %= mod;
+                (a[i + j + k] *= type) %= mod;
+            }
+}
+void FWT(int n, int *a, int f_type, int t_type) {
+    if (f_type == 0) {
+        if (t_type == 0) Or(n, a, 1);
+        else Or(n, a, -1);
+    } else if (f_type == 1) {
+        if (t_type == 0) And(n, a, 1);
+        else And(n, a, -1);
+    } else {
+        if (t_type == 0) Xor(n, a, 1);
+        else Xor(n, a, power(2, mod - 2));
+    }
+}
+// by lyh
+\end{lstlisting}
+
+\subsection{自适应辛普森}
+
+辛普森公式：
+\[
+    \int_l^r f(x) \mathrm{d} x=\frac{(r-l)\left(f(l)+f(r)+4 f\left(\frac{l+r}{2}\right)\right)}{6}
+\]
+一般辛普森法：将区间 $[L, R]$ 分成 $2N$ 个小区间 $[x_{2i-1}, x_{2i}]$，其中 $x_i=l+i h, i=0 \ldots 2 n, h=\frac{r-l}{2 n}$.
+\[
+    \int_l^r f(x) d x \approx\left(f\left(x_0\right)+4 f\left(x_1\right)+2 f\left(x_2\right)+\ldots+4 f\left(x_{2 N-1}\right)+f\left(x_{2 N}\right)\right) \frac{h}{3}
+\]
+
+自适应辛普森时间复杂度：$O\left(\log \dfrac{1}{\epsilon}\right) \sim O\left(\dfrac{1}{\epsilon^{1/4}}\right)$
+\begin{lstlisting}[language = C++]
+double f(double x){
+    // 给定函数
+    return (c*x+d)/(a*x+b);
+}
+
+double simpson(double l, double r){
+    return (r-l)*(f(l)+f(r)+f((l+r)/2)*4)/6;
+}
+
+double asr(double l, double r, double eps, double res, int step){
+    double mid = (l+r)/2;
+    double fl = simpson(l, mid), fr = simpson(mid, r);
+    // 分段计算结果和不分段近似，且已完成强制次数，直接返回
+    if(fabs(fl+fr-res)/15 < eps && step < 0)
+        return fl+fr+(fl+fr-res)/15;
+    return asr(l, mid, eps/2, fl, step-1)
+        +asr(mid, r, eps/2, fr, step-1);
+}
+
+double integr(double l, double r){
+    return asr(l, r, eps, simpson(l, r), 12);
+    // 迭代次数限制可视情况改为6，注意卡常
+}
+\end{lstlisting}

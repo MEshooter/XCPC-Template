@@ -1,0 +1,557 @@
+\section{数据结构}
+
+\subsection{线段树整合}
+
+\begin{lstlisting}[language=C++]
+struct Tag {
+    int x;
+    void apply(const Tag &t) {}
+};
+
+struct Info {
+    int l, r;
+    void apply(const Tag &t) {}
+};
+Info operator+(const Info &u, const Info &v) {
+    Info res;
+    res.l = u.l;
+    res.r = v.r;
+    return res;
+}
+
+struct LazySegmentTree {
+    int n;
+    vector<Info> info;
+    vector<Tag> tag;
+    LazySegmentTree(int n_, Info v_ = Info()) {
+        init(n_, v_);
+    }
+    LazySegmentTree(const vector<Info> &init_) {
+        init(init_);
+    }
+    void init(int n_, Info v_ = Info()) {
+        init(vector(n_, v_)); // seg(n + 1)
+    }
+    void init(const vector<Info> init_) {
+        n = init_.size() - 1; // init_ 大小为 n + 1
+        info.assign(4 << __lg(n), Info());
+        tag.assign(4 << __lg(n), Tag());
+        function<void(int, int, int)> build = [&](int p, int l, int r) {
+            if (l == r) {
+                info[p] = init_[l];
+                info[p].l = l;
+                info[p].r = r;
+
+                return;
+            }
+            int m = l + r >> 1;
+            build(p << 1, l, m);
+            build(p << 1 | 1, m + 1, r);
+            pull(p);
+        };
+        build(1, 1, n);
+    }
+    void pull(int p) {
+        info[p] = info[p << 1] + info[p << 1 | 1];
+    }
+    void apply(int p, int l, int r, const Tag &v) {
+        info[p].apply(v);
+        tag[p].apply(v);
+    }
+    void push(int p, int l, int r) {
+        int m = l + r >> 1;
+        apply(p << 1, l, m, tag[p]);
+        apply(p << 1 | 1, m + 1, r, tag[p]);
+        tag[p] = Tag();
+    }
+    Info rangeQuery(int p, int l, int r, int x, int y) {
+        if (x <= l && r <= y) {
+            return info[p];
+        }
+        push(p, l, r);
+        int m = l + r >> 1;
+        if (y <= m) {
+            return rangeQuery(p << 1, l, m, x, y);
+        } else if (x >= m + 1) {
+            return rangeQuery(p << 1 | 1, m + 1, r, x, y);
+        } else {
+            return rangeQuery(p << 1, l, m, x, y) + rangeQuery(p << 1 | 1, m + 1, r, x, y);
+        }
+    }
+    Info rangeQuery(int l, int r) {
+        return rangeQuery(1, 1, n, l, r);
+    }
+    void rangeModify(int p, int l, int r, int x, int y, const Tag &v) {
+        if (x <= l && r <= y) {
+            apply(p, l, r, v);
+            return;
+        }
+        push(p, l, r);
+        int m = l + r >> 1;
+        if (y <= m) {
+            rangeModify(p << 1, l, m, x, y, v);
+        } else if (x >= m + 1) {
+            rangeModify(p << 1 | 1, m + 1, r, x, y, v);
+        } else {
+            rangeModify(p << 1, l, m, x, y, v);
+            rangeModify(p << 1 | 1, m + 1, r, x, y, v);
+        }
+        pull(p);
+    }
+    void rangeModify(int l, int r, const Tag &v) {
+        rangeModify(1, 1, n, l, r, v);
+    }
+    void modify(int p, int l, int r, int x, const Info &v) {
+        if (l == r) {
+            info[p] = v;
+            return;
+        }
+        push(p, l, r);
+        int m = l + r >> 1;
+        if (x <= m) {
+            modify(p << 1, l, m, x, v);
+        } else {
+            modify(p << 1 | 1, m + 1, r, x, v);
+        }
+        pull(p);
+    }
+    void modify(int x, const Info &v) {
+        modify(1, 1, n, x, v);
+    }    
+    template<class F>
+    int findFirst(int p, int l, int r, int x, int y, F &&pred) {
+        if (y < l || r < x) {
+            return -1;
+        }
+        if (x <= l && r <= y && !pred(info[p])) {
+            return -1;
+        }
+        if (l == r) {
+            return l;
+        }
+        push(p, l, r);
+        int m = l + r >> 1;
+        int res = findFirst(p << 1, l, m, x, y, pred);
+        if (res == -1) {
+            res = findFirst(p << 1 | 1, m + 1, r, x, y, pred);
+        }
+        return res;
+    }
+    template<class F>
+    int findFirst(int l, int r, F &&pred) {
+        return findFirst(1, 1, n, l, r, pred);
+    }
+    template<class F>
+    int findLast(int p, int l, int r, int x, int y, F &&pred) {
+        if (y < l || r < x) {
+            return -1;
+        }
+        if (x <= l && r <= y && !pred(info[p])) {
+            return -1;
+        }
+        if (l == r) {
+            return l;
+        }
+        push(p, l, r);
+        int m = l + r >> 1;
+        int res = findLast(p << 1 | 1, m + 1, r, x, y, pred);
+        if (res == -1) {
+            res = findLast(p << 1, l, m, x, y, pred);
+        }
+        return res;
+    }
+    template<class F>
+    int findLast(int l, int r, F &&pred) {
+        return findLast(1, 1, n, l, r, pred);
+    }
+}
+// by lyh
+\end{lstlisting}
+
+\subsection{可持久化线段树}
+
+维护历史区间最大值
+
+\begin{lstlisting}[language=C++]
+struct node{
+    int lc, rc, dat;
+}tr[M];
+
+int build(int l, int r){
+    int p = ++tot;
+    if(l == r){
+        tr[p].dat = a[l];
+        return p;
+    }
+    int mid = (l+r)>>1;
+    tr[p].lc = build(l, mid);
+    tr[p].rc = build(mid+1, r);
+    tr[p].dat = max(tr[tr[p].lc].dat, tr[tr[p].rc].dat);
+    return p;
+}
+
+int insert(int k, int l, int r, int pos, int val){
+    int p = ++tot;
+    tr[p] = tr[k];
+    if(l == r){
+        tr[p].dat = val;
+        return p;
+    }
+    int mid = (l+r)>>1;
+    if(mid >= pos) tr[p].lc = insert(tr[k].lc, l, mid, pos, val);
+    else tr[p].rc = insert(tr[k].rc, mid+1, r, pos, val);
+    tr[p].dat = max(tr[tr[p].lc].dat, tr[tr[p].rc].dat);
+    return p;
+}
+
+int query(int k, int l, int r, int L, int R){
+    int res = -2e9;
+    if(l >= L && r <= R) return tr[k].dat;
+    int mid = (l+r)>>1;
+    if(mid >= L) res = max(res, query(tr[k].lc, l, mid, L, R));
+    if(mid < R) res = max(res, query(tr[k].rc, mid+1, r, L, R));
+    return res; 
+}
+\end{lstlisting}
+
+查询区间第 $k$ 小值（静态）
+
+\begin{lstlisting}[language=C++]
+#include<bits/stdc++.h>
+using namespace std;
+
+const int N = 2e5+10;
+int n, m, tot, num;
+int a[N], b[N], c[N], root[N];
+
+struct node{
+    int lc, rc, dat;
+}tr[N<<5];
+
+int build(int l, int r){
+    int p = ++tot;
+    if(l == r){
+        tr[p].dat = 0;
+        return p;
+    }
+    int mid = (l+r)>>1;
+    tr[p].lc = build(l, mid);
+    tr[p].rc = build(mid+1, r);
+    tr[p].dat = tr[tr[p].lc].dat+tr[tr[p].rc].dat;
+    return p;
+}
+
+int change(int k, int l, int r, int pos, int val){
+    int p = ++tot;
+    tr[p] = tr[k];
+    if(l == r){
+        tr[p].dat += val;
+        return p;
+    }
+    int mid = (l+r)>>1;
+    if(mid >= pos) tr[p].lc = change(tr[k].lc, l, mid, pos, val);
+    else tr[p].rc = change(tr[k].rc, mid+1, r, pos, val);
+    tr[p].dat = tr[tr[p].lc].dat+tr[tr[p].rc].dat;
+    return p;
+}
+
+int query(int i, int j, int l, int r, int k){
+    if(l == r) return l;
+    int mid = (l+r)>>1;
+    int cntl = tr[tr[j].lc].dat-tr[tr[i].lc].dat;
+    if(cntl >= k) return query(tr[i].lc, tr[j].lc, l, mid, k);
+    else return query(tr[i].rc, tr[j].rc, mid+1, r, k-cntl);
+}
+
+int Q(int x) {return lower_bound(c+1, c+num+1, x)-c;}
+
+void discrete(){
+    for(int i = 1; i <= n; i++) b[i] = a[i];
+    sort(b+1, b+n+1);
+    b[0] = -1;
+    num = 0;
+    for(int i = 1; i <= n; i++)
+        if(b[i] != b[i-1]) c[++num] = b[i];
+    for(int i = 1; i <= n; i++)
+        a[i] = Q(a[i]);
+}
+
+int main(){
+    ios::sync_with_stdio(0);
+    cin.tie(0);
+    cin >> n >> m;
+    for(int i = 1; i <= n; i++)
+        cin >> a[i];
+    discrete();
+    root[0] = build(1, num);
+    for(int i = 1; i <= n; i++)
+        root[i] = change(root[i-1], 1, num, a[i], 1);
+    for(int i = 1; i <= m; i++){
+        int l, r, k;
+        cin >> l >> r >> k;
+        int id = query(root[l-1], root[r], 1, num, k);
+        cout << c[id] << endl;
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\subsection{可持久化并查集}
+
+\subsection{李超线段树}
+
+\begin{lstlisting}[language=C++]
+using ll = long long;
+using pii = pair<int, int>;
+using pdi = pair<double, int>;
+const int N = 1e5+10, modx = 39989, mody = 1e9+7;
+const double eps = 1e-9;
+struct line{
+    double k, b;
+    line(double _k = 0, double _b = 0): k(_k), b(_b) {}
+}l[N];
+int n, tot, tr[N<<2];
+
+line get_line(double x1, double y1, double x2, double y2){
+    if(x1 == x2) return line(0, max(y1, y2));
+    return line((y1-y2)/(x1-x2), (x1*y2-x2*y1)/(x1-x2));
+}
+
+double calc(int i, ll x){
+    return l[i].k*x+l[i].b;
+}
+
+int cmp(double x, double y){
+    if(x-y > eps) return 1;
+    if(y-x > eps) return -1;
+    return 0;
+}
+
+pdi pmax(pdi a, pdi b){
+    if(cmp(a.first, b.first) == 1) return a;
+    if(!cmp(a.first, b.first))
+        return a.second < b.second ? a : b;
+    return b;
+}
+
+void update(int k, int l, int r, int u){
+    int &v = tr[k], mid = (l+r)>>1;
+    int cmid = cmp(calc(u, mid), calc(v, mid));
+    if(cmid == 1 || (!cmid && u < v)) swap(u, v);
+    int cl = cmp(calc(u, l), calc(v, l)), rl = cmp(calc(u, r), calc(v, r));
+    if(cl == 1 || (!cl && u < v)) update(k<<1, l, mid, u);
+    if(rl == 1 || (!rl && u < v)) update((k<<1)|1, mid+1, r, u);
+}
+
+void insert(int k, int l, int r, int L, int R, int u){
+    if(l >= L && r <= R){
+        update(k, l, r, u);
+        return ;
+    }
+    int mid = (l+r)>>1;
+    if(mid >= L) insert(k<<1, l, mid, L, R, u);
+    if(mid < R) insert((k<<1)|1, mid+1, r, L, R, u);
+}
+
+pdi query(int k, int l, int r, ll x){
+    int mid = (l+r)>>1;
+    pdi res = {calc(tr[k], x), tr[k]};
+    if(l == r) return res;
+    if(x <= mid) res = pmax(res, query(k<<1, l, mid, x));
+    if(x > mid) res = pmax(res, query((k<<1)|1, mid+1, r, x)); 
+    return res;
+}
+\end{lstlisting}
+
+\subsection{笛卡尔树}
+
+每个节点为一对键值 $(k, w)$，其中 $k$ 满足二叉搜索树的性质，$w$ 满足堆的性质，通过单调栈维护右链建树，新的节点插入到右链，将 $w$ 大于该节点的子树作为左子树。
+
+\begin{lstlisting}[language = C++]
+// stk 维护笛卡尔树中节点对应到序列中的下标
+for (int i = 1; i <= n; i++) {
+    int k = top;  // top 表示操作前的栈顶，k 表示当前栈顶
+    while(k > 0 && w[stk[k]] > w[i]) k--;  // 维护右链上的节点
+    if(k) rs[stk[k]] = i;  // 栈顶元素.右儿子 := 当前元素
+    if(k < top) ls[i] = stk[k + 1]; 
+    // 当前元素.左儿子 := 上一个被弹出的元素  
+    stk[++k] = i; // 当前元素入栈
+    top = k;
+}
+\end{lstlisting}
+
+\subsection{ST 表}
+
+\begin{lstlisting}[language=C++]
+template<class T>
+struct SparseTable {
+    using Func = function<T(T, T)>; // lambda
+    int n;
+    vector<int> log2;
+    vector<vector<T>> st;
+    Func func;
+
+    SparseTable(const vector<T> &a, Func f) {
+        init(a, f);
+    }
+    void init(const vector<T> &a, Func f) {
+        n = a.size();
+        func = f;
+        int k = __lg(n) + 1;
+        log2.assign(n, 0);
+        st.assign(n, vector<T>(k));
+        for (int i = 2; i < n; i++) {
+            log2[i] = log2[i >> 1] + 1;
+        }
+        for (int i = 1; i < n; i++) {
+            st[i][0] = a[i];
+        }
+        for (int j = 1; j < k; j++) {
+            for (int i = 1; i + (1 << j) - 1 < n; i++) {
+                st[i][j] = func(st[i][j - 1], st[i + (1 << j - 1)][j - 1]);
+            }
+        }
+    }
+    T query(int l, int r) {
+        int k = log2[r - l + 1];
+        return func(st[l][k], st[r - (1 << k) + 1][k]);
+    }
+};
+// by lyh
+\end{lstlisting}
+
+\subsection{XOR Hash}
+
+\begin{lstlisting}[language=C++]
+mt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());
+struct XorHash {
+    int n;
+    vector<int> Base, Xor, Hash;
+    XorHash(const vector<int> &a) {
+        init(a);
+    }
+    void init(const vector<int> &a) {
+        n = a.size();
+        Base.assign(n, 0);
+        Xor.assign(n, 0);
+        Hash.assign(n, 0);
+        for (int i = 1; i < n; i++) {
+            Base[i] = rng();
+            Xor[i] = Xor[i - 1] ^ Base[i];
+        }
+        for (int i = 1; i < n; i++) {
+            Hash[i] = Hash[i - 1] ^ Base[a[i]];
+        }
+    }
+    bool isPemutation(int l, int r, int s, int t) { // a[l, r]是否是整数[s, t]的排列
+        return (Hash[r] ^ Hash[l - 1]) == (Xor[t] ^ Xor[s - 1]);
+    }
+};
+// by lyh
+\end{lstlisting}
+
+\subsection{动态图连通性 (线段树分治+可撤销并查集)}
+
+利用线段树对询问进行划分, 每个叶子节点对应一个时间点. 记每条边的存在时间为 $[l, r]$, 将该区间插入线段树中, 线段树的每个节点记录对应时间段内存在的边. 建完树后 dfs 遍历线段树, 访问至叶节点回答询问. 回溯时撤销当前节点对并查集的操作.
+\begin{lstlisting}[language=C++]
+// LOJ 121
+#include<bits/stdc++.h>
+using namespace std;
+
+using pii = pair<int, int>;
+const int N = 5e3+10, M = 5e5+10;
+map<pii, int> mp;
+int n, m, ans[M];
+pii q[M];
+vector<pii> tr[M*20];
+
+struct operation{
+    int x, y, s_x;
+};
+struct DSU{
+    int num;
+    vector<int> f, s;
+    stack<operation> op;
+    DSU() {}
+    DSU(int sz){
+        num = sz;
+        f = vector<int> (num+1, 0);
+        s = vector<int> (num+1, 1);
+        iota(f.begin(), f.end(), 0);
+    }
+    int find(int x){
+        if(f[x] == x) return x;
+        return find(f[x]);
+    }
+    void merge(int x, int y){
+        x = find(x); y = find(y);
+        if(s[x] > s[y]) swap(x, y);
+        op.push({x, y, s[x]});
+        if(x != y){
+            f[x] = y;
+            s[y] += x; s[x] = 0;
+        }
+    }
+    void split(){
+        auto [x, y, s_x] = op.top();  
+        op.pop();
+        if(x == y) return ;
+        f[x] = x;
+        s[x] = s_x; s[y] -= s_x;
+    }
+    void back(int x){
+        for(int i = 1; i <= x; i++) split();
+    }
+}g;
+void insert(int k, int l, int r, int L, int R, pii e){
+    if(l >= L && r <= R){
+        tr[k].push_back(e);
+        return ;
+    }
+    int mid = (l+r)>>1;
+    if(mid >= L) insert(k<<1, l, mid, L, R, e);
+    if(mid < R) insert((k<<1)|1, mid+1, r, L, R, e);
+}
+void dfs(int k, int l, int r){
+    for(auto [x, y]: tr[k])
+        g.merge(x, y);
+    if(l == r){
+        auto [x, y] = q[l];
+        if(x == 0 && y == 0) {g.back(tr[k].size()); ans[l] = -1; return ;}
+        if(g.find(x) == g.find(y)) ans[l] = 1;
+        else ans[l] = 0;
+        g.back(tr[k].size());
+        return ;
+    }
+    int mid = (l+r)>>1;
+    dfs(k<<1, l, mid);
+    dfs((k<<1)|1, mid+1, r);
+    g.back(tr[k].size());
+}
+
+int main(){
+    ios::sync_with_stdio(0);
+    cin >> n >> m;
+    for(int i = 1; i <= m; i++){
+        int op, x, y;
+        cin >> op >> x >> y;
+        if(x > y) swap(x, y);
+        q[i] = {0, 0};
+        if(op == 0) mp[{x, y}] = i;
+        else if(op == 1){
+            insert(1, 1, m, mp[{x, y}], i-1, {x, y});
+            mp[{x, y}] = 0;
+        }
+        else q[i] = {x, y};
+    }
+    for(auto [e, i]: mp)
+        if(i) insert(1, 1, m, i, m, e);
+    g = DSU(n);
+    dfs(1, 1, m);
+    for(int i = 1; i <= m; i++) if(ans[i] != -1){
+        if(ans[i]) cout << "Y\n";
+        else cout << "N\n";
+    }
+    return 0;
+}
+\end{lstlisting}
