@@ -5,3 +5,6 @@
 .vscode
 .cph
 .zip
+history/
+cpp_source/
+*.zip
