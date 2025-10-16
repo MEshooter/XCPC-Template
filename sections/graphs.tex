@@ -89,8 +89,129 @@ for (k = 1; k <= n; k++)
         if (f[i][k]) f[i] = f[i] | f[k];
 \end{lstlisting}
 
+\subsection{Kruskal重构树}
+
+通过 ST 表优化 LCA，可以 $O(1)$ 在线查询 $u, v$ 之间的最小瓶颈路。
+
+\begin{lstlisting}[language=C++]
+#include<bits/stdc++.h>
+using namespace std;
+
+using ll = long long;
+const int N = 3e5+10, mod = 1e9+7;
+int A, B, C, P;
+int n, m, q, len, tot;
+int dep[N], dfn[N], seq[N], Log2[N], st[N][20], rev[N][20];
+ll val[N];
+
+struct edge{
+    int u, v; ll w;
+    edge(int _u = 0, int _v = 0, ll _w = 0): u(_u), v(_v), w(_w) {}
+    bool operator < (const edge &t) const{
+        return w < t.w;
+    }
+}e[N];
+
+inline int rnd() {return A = (A*B+C)%P;}
+
+struct DSU{
+    int n;
+    vector<int> f;
+    DSU(int _n = 0): n(_n){
+        f.resize(n+1);
+        iota(f.begin(), f.end(), 0);
+    }
+    int find(int x){
+        if(f[x] == x) return x;
+        return f[x] = find(f[x]);
+    }
+    void merge(int x, int y){
+        x = find(x), y = find(y);
+        f[y] = x;
+    }
+}dsu;
+
+struct node{
+    int lc, rc;
+    node(int l = 0, int r = 0): lc(l), rc(r) {}
+}tr[N];
+
+void init(int n){
+    for(int i = 0; i <= n; i++)
+        Log2[i] = log2(i);
+}
+
+void dfs(int x, int pre){
+    dfn[x] = ++len;
+    seq[len] = x;
+    dep[x] = dep[pre]+1;
+    if(tr[x].lc) dfs(tr[x].lc, x), seq[++len] = x;
+    if(tr[x].rc) dfs(tr[x].rc, x), seq[++len] = x;
+}
+// 在dfs序列上查询深度最小值，通过ST表实现RMQ
+void build(){
+    memset(st, 0x3f, sizeof(st));
+    for(int i = 1; i <= len; i++)
+        st[i][0] = dep[seq[i]], rev[i][0] = seq[i];
+    for(int j = 1; j < 20; j++)
+        for(int i = 1; i+(1<<j)-1 <= len; i++)
+            if(st[i][j-1] < st[i+(1<<j-1)][j-1])
+                st[i][j] = st[i][j-1], rev[i][j] = rev[i][j-1];
+            else
+                st[i][j] = st[i+(1<<j-1)][j-1], rev[i][j] = rev[i+(1<<j-1)][j-1];
+}
+
+inline int query(int l, int r){
+    int k = Log2[r-l+1];
+    return st[l][k] < st[r-(1<<k)+1][k] ? rev[l][k] : rev[r-(1<<k)+1][k];
+}
+
+int LCA(int x, int y){
+    int l = dfn[x], r = dfn[y];
+    if(l > r) swap(l, r);
+    return query(l, r);
+}
+
+int main(){
+    ios::sync_with_stdio(0);
+    cin.tie(0);
+    init(N-1);
+    cin >> n >> m;
+    dsu = DSU(n*2);
+    for(int i = 1; i <= m; i++){
+        auto &[u, v, w] = e[i];
+        cin >> u >> v >> w;
+    }
+    sort(e+1, e+m+1);
+    tot = n;
+    for(int i = 1; i <= m; i++){
+        auto [u, v, w] = e[i];
+        u = dsu.find(u), v = dsu.find(v);
+        if(u == v) continue;
+        tr[++tot] = {u, v};
+        dsu.merge(tot, u);
+        dsu.merge(tot, v);
+        val[tot] = max({w, val[u], val[v]});
+    }
+    dfs(tot, 0);
+    build();
+    cin >> q;
+    cin >> A >> B >> C >> P;
+    ll ans = 0;
+    for(int i = 1; i <= q; i++){
+        int u = rnd()%n+1, v = rnd()%n+1;
+        int lca = LCA(u, v);
+        ans = (ans+val[lca])%mod;
+    }
+    cout << ans << endl;
+    return 0;
+}
+\end{lstlisting}
+
 \subsection{基环树森林的直径}
+
 取环+单调队列求直径. 
+
 \begin{lstlisting}[language=C++]
 // 基环树直径的两种可能：a. 不在环上 b. 环的一部分+两条链
 #include<bits/stdc++.h>
@@ -288,7 +409,38 @@ auto subtreeQuery = [&](int u) {
 // by lyh
 \end{lstlisting}
 
-\subsection{LCA}
+\subsection{树哈希}
+
+\begin{lstlisting}[language=C++]
+using ull = unsigned long long;
+const int N = 1e6+10;
+int n;
+vector<int> e[N];
+random_device rd;
+mt19937_64 gen(rd());
+const ull mask = gen();
+ull h[N];
+unordered_set<ull> us;
+
+ull xor_shift(ull x){
+    x ^= mask;
+    x ^= x << 13;
+    x ^= x << 7;
+    x ^= x << 17;
+    x ^= mask;
+    return x;    
+}
+
+void dfs(int x, int fa){
+    h[x] = 1;
+    for(auto y: e[x]){
+        if(y == fa) continue;
+        dfs(y, x);
+        h[x] += xor_shift(h[y]);
+    }
+    us.insert(h[x]);
+}
+\end{lstlisting}
 
 \subsection{无向图连通性}
 
@@ -664,6 +816,7 @@ void solve() {
     }
 }
 \end{lstlisting}
+
 \subsection{二分图}
 
 \subsection{网络流}

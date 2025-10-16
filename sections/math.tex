@@ -69,7 +69,51 @@ ll exgcd(ll a, ll b, ll &x, ll &y){
 }
 \end{lstlisting}
 
+\subsection{中国剩余定理}
+
+中国剩余定理（Chinese Remainder Theorem，CRT）可求解如下形式的一元线性同余方程组（其中 $n_1, n_2, \cdots, n_k$ 两两互质）：
+$$
+\left\{\begin{aligned}
+x & \equiv a_1\left(\pmod n_1\right) \\
+x & \equiv a_2\left(\pmod n_2\right) \\
+& \vdots \\
+x & \equiv a_k\left(\pmod n_k\right)
+\end{aligned}\right.
+$$
+
+\begin{enumerate}
+    \item 计算所有模数的积 $n$ 
+    \item 对于第 $i$ 个方程：计算 $m_i=\frac{n}{n_i}$； 计算 $m_i$ 在模 $n_i$ 意义下的 逆元 $m_i^{-1}$ ；计算 $c_i=m_i m_i^{-1}$（不要对 $n_i$ 取模）
+    \item 方程组在模 $n$ 意义下的唯一解为：$x=\sum_{i=1}^k a_i c_i(\bmod n)$
+\end{enumerate}
+
+\begin{lstlisting}[language=C++]
+void solve() {
+    int n;
+    cin >> n;
+    
+    int prod = 1;
+    vector<int> a(n + 1), b(n + 1);
+    for (int i = 1; i <= n; i++) {
+        cin >> a[i] >> b[i];
+        prod *= a[i];
+    }
+
+    int x = 0;
+    for (int i = 1; i <= n; i++) {
+        int cur = prod / a[i], inv, k;
+        // cur * x = 1 - k * a[i]
+        exgcd(cur, a[i], inv, k);
+        x += (i128)b[i] * cur % prod * inv % prod;
+        x %= prod;
+    }
+    cout << (x + prod) % prod << "\n";
+}
+\end{lstlisting}
+
 \subsection{高斯消元}
+
+A. 解含有 $n$ 个方程，$n$ 个未知数的实数方程组，第 $i$ 行严格对应 $x_i$。数据类型可换为复数、同余类等。
 
 \begin{lstlisting}[language = C++]
 double* solve(int n, double a[][N], double b[], int &state){
@@ -105,6 +149,34 @@ double* solve(int n, double a[][N], double b[], int &state){
     return x;
 }
 // 调用：double *x = solve(a, b, n, state);
+\end{lstlisting}
+
+B. 解异或方程组，带 `bitset' 优化，时间复杂度为 $O(\frac{n^3}{w})$。
+
+\begin{lstlisting}[language=C++]
+int gauss_xor(int n, bitset<N> *a, bitset<N> &b){
+    int rank = 0;
+    for(int i = 1; i <= n; i++){
+        if(!a[i][i]) for(int j = 1; j <= n; j++){
+            if(j < i && a[j][j]) continue;
+            if(!a[j][i]) continue;
+            swap(a[i], a[j]);
+            bool tmp = b[i]; b[i] = b[j], b[j] = tmp;
+            break;
+        }
+        if(!a[i][i]) continue;
+        ++rank;
+        for(int j = 1; j <= n; j++){
+            if(i == j || !a[j][i]) continue;
+            a[j] ^= a[i];
+            b[j] = b[j]^b[i];
+        }
+    }
+    for(int i = 1; i <= n; i++)
+        if(!a[i][i] && b[i]) return -1; // no solution
+    return n-rank; // multiple solutions or exact one solution
+    // b[] is the solution
+}
 \end{lstlisting}
 
 \subsection{线性基}
@@ -224,6 +296,45 @@ void FFT(vector<Complex> &A, bool inverse) {
 // by lyh
 \end{lstlisting}
 
+\begin{lstlisting}[language=C++]
+void flip(Comp *a, int n){
+    static int rev[N];
+    rev[0] = 0;
+    for(int i = 1; i < n; i++)
+        rev[i] = (rev[i>>1]>>1) + (i&1 ? n>>1 : 0);
+    for(int i = 0; i < n; i++)
+        if(rev[i] > i) swap(a[i], a[rev[i]]);
+}
+
+void DFT(Comp *f, int n, int sign){
+    flip(f, n);
+    for(int l = 2; l <= n; l <<= 1){
+        Comp root(cos(sign*2*PI/l), sin(sign*2*PI/l));
+        for(int i = 0; i < n; i += l){
+            Comp cur(1, 0);
+            for(int j = i; j < i+l/2; j++){
+                Comp u = f[j], v = cur*f[j+(l>>1)];
+                f[j] = u+v;
+                f[j+(l>>1)] = u-v;
+                cur *= root;
+            }
+        }
+    }
+    if(sign == -1) for(int i = 0; i < n; i++) f[i] /= n;
+}
+
+void FFT(int n, Comp *a, Comp *b, Comp *c){
+    int d = ceil(log2(n));
+    n = 1<<d;
+    DFT(a, n, 1); DFT(b, n, 1);
+    for(int i = 0; i < n; i++)
+        c[i] = a[i]*b[i];
+    DFT(c, n, -1);
+}
+// len = n+m+1;
+// by zzy
+\end{lstlisting}
+
 \subsubsection{NTT}
 
 \begin{lstlisting}[language=C++]
@@ -294,6 +405,38 @@ void solve() {
 // by lyh
 \end{lstlisting}
 
+\begin{lstlisting}[language=C++]
+void DFT(ll *f, int n, int sign){
+    flip(f, n);
+    for(int l = 2; l <= n; l <<= 1){
+        ll g = fpow(3, (mod-1)/l);
+        // cout << n << " " << g << " " << inv(g) << endl;
+        if(sign == -1) g = inv(g);
+        for(int i = 0; i < n; i += l){
+            ll cur = 1;
+            for(int j = i; j < i+(l>>1); j++){
+                ll u = f[j], v = cur*f[j+(l>>1)]%mod;
+                f[j] = (u+v)%mod;
+                f[j+(l>>1)] = ((u-v)%mod+mod)%mod;
+                cur = (cur*g)%mod;
+            }
+        }
+    }
+    ll invn = inv(n);
+    if(sign == -1) for(int i = 0; i < n; i++) f[i] = f[i]*invn%mod;
+}
+
+void NTT(int n, ll *a, ll *b, ll *c){
+    int d = ceil(log2(n));
+    n = 1<<d;
+    DFT(a, n, 1); DFT(b, n, 1);
+    for(int i = 0; i < n; i++)
+        c[i] = a[i]*b[i]%mod;
+    DFT(c, n, -1);
+}
+// by zzy
+\end{lstlisting}
+
 \subsubsection{FWT}
 
 \begin{lstlisting}[language=C++]
@@ -332,6 +475,90 @@ void FWT(int n, int *a, int f_type, int t_type) {
     }
 }
 // by lyh
+\end{lstlisting}
+
+\subsection{拉格朗日插值（$\sum i^m$）}
+
+$$
+f(x)=\sum_{i=1}^n \prod_{j \neq i} \frac{x-x_j}{x_i-x_j} y_i
+$$
+
+\begin{lstlisting}[language=C++]
+// O(m) 计算 f(n, m) = \sum_{i = 1}^{n} i^m
+int f(int n, int m) {
+    vector<int> pre(m + 3, 1), suf(m + 4, 1);
+    for (int i = 1; i <= m + 2; i++) {
+        pre[i] = pre[i - 1] * (n - i + mod) % mod;
+    }
+    for (int i = m + 2; i >= 1; i--) {
+        suf[i] = suf[i + 1] * (n - i + mod) % mod;
+    }
+    int res = 0;
+    for (int i = 1; i <= m + 2; i++) {
+        int u = pre[i - 1] * suf[i + 1] % mod;
+        int v = inv_fac[i - 1] * (inv_fac[m + 2 - i] * ((m + 2 - i) % 2 == 1 ? mod - 1 : 1) % mod) % mod;
+        res += pre_pw[i][m] * u % mod * v % mod;
+        res %= mod;
+    }
+    return res;
+}
+\end{lstlisting}
+
+\subsection{Lucas 定理}
+对于素数 $p$ ，有
+$$
+\binom{n}{k} \equiv\binom{\lfloor n / p\rfloor}{\lfloor k / p\rfloor}\binom{ n \bmod p}{k \bmod p} \quad(\pmod p) .
+$$
+
+其中，当 $n<k$ 时，二项式系数 $\binom{n}{k}$ 规定为 0 。
+
+\begin{lstlisting}[language=C++]
+int Lucas(int n, int m, int p) {
+    if (m == 0) {
+        return 1;
+    }
+    return binom(n % p, m % p, p) * Lucas(n / p, m / p, p) % p;
+}
+\end{lstlisting}
+
+\subsection{BSGS}
+
+\begin{lstlisting}[language=C++]
+void solve() {
+    int a, b, m;
+    cin >> m >> a >> b;
+
+    auto power = [&](int a, int b) {
+        int res = 1;
+        for (a %= m; b; b >>= 1, a = a * a % m) {
+            if (b & 1) {
+                res = res * a % m;
+            }
+        }
+        return res;
+    };
+
+    unordered_map<int, int> mp;
+    int sq = ceil(sqrt(m));
+    int pw = 1;
+    for (int B = 0; B <= sq; B++) {
+        mp[b * pw % m] = B;
+        pw = pw * a % m;
+    }
+    int mn = inf;
+    pw = 1;
+    int pw_sq = power(a, sq) % m;
+    for (int A = 0; A <= sq; A++) {
+        if (mp.count(pw)) {
+            int B = mp[pw];
+            if (A * sq - B >= 0) {
+                mn = min(mn, A * sq - B);
+            }
+        }
+        pw = pw * pw_sq % m;
+    }
+    cout << (mn == inf ? "no solution" : to_string(mn)) << "\n";
+}
 \end{lstlisting}
 
 \subsection{自适应辛普森}

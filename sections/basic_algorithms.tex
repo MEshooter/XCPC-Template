@@ -365,7 +365,7 @@ struct Mint{
     }
     Mint<M>& operator += (const Mint<M> &t){
         val += t.val;
-        if(val > M) val -= M;
+        if(val >= M) val -= M;
         return *this;
     }
     Mint<M>& operator -= (const Mint<M> &t){

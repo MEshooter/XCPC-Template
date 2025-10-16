@@ -380,6 +380,197 @@ for (int i = 1; i <= n; i++) {
 }
 \end{lstlisting}
 
+\subsection{pbds tree}
+
+\begin{lstlisting}[language=C++]
+#include <bits/extc++.h>
+using namespace __gnu_pbds;
+using pbds_tree = tree<array<int, 2>, null_type, less<>, rb_tree_tag, tree_order_statistics_node_update>;
+
+void solve() {
+    int idx = 0; // 有重复元素，要设置唯一索引
+    pbds_tree t;
+    while (q--) {
+        if (o == 1) {
+            // 插入
+            t.insert({x, idx++});
+        } else if (o == 2) {
+            // 删除
+            auto it = t.lower_bound({x, 0});
+            if (it != t.end() && (*it)[0] == x) {
+                t.erase(it);
+            }
+        } else if (o == 3) {
+            // 排名
+            cout << t.order_of_key({x, 0}) + 1 << "\n"; 
+        } else if (o == 4) {
+            // 第 x 大，find_by_order 是 0-based，要查 x - 1
+            cout << (*t.find_by_order(x - 1))[0] << "\n";
+        } else if (o == 5) {
+            // 前驱
+            cout << (*--t.lower_bound({x, 0}))[0] << "\n";
+        } else {
+            // 后继
+            cout << (*t.upper_bound({x, idx}))[0] << "\n";
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{pbds pq}
+
+\begin{lstlisting}[language=C++]
+using pbds_pq = __gnu_pbds::priority_queue<array<int, 2>, greater<>>;
+
+void solve() {
+    int n, m;
+    cin >> n >> m;
+    
+    vector<pbds_pq> pq(n + 1);
+    for (int i = 1; i <= n; i++) {
+        int x;
+        cin >> x;
+        pq[i].push({x, i});
+    }
+    
+    vector<bool> del(n + 1);
+    DSU dsu(n + 1);
+
+    while (m--) {
+        int o;
+        cin >> o;
+        
+        if (o == 1) {
+            // 合并第 x 个数和第 y 个数所在的堆
+            int x, y;
+            cin >> x >> y;
+            
+            int fx = dsu.find(x);
+            int fy = dsu.find(y);
+            if (del[x] || del[y] || fx == fy) {
+                continue;
+            }
+            if (pq[fx].size() < pq[fy].size()) {
+                swap(fx, fy);
+            }
+            pq[fx].join(pq[fy]);
+            dsu.merge(fx, fy);
+
+        } else {
+            // 删除第 x 个数所在堆的堆顶
+            int x;
+            cin >> x;
+
+            if (del[x]) {
+                cout << "-1\n";
+            } else {
+                x = dsu.find(x);
+
+                auto [val, id] = pq[x].top();
+                pq[x].pop();
+
+                del[id] = true;
+                cout << val << "\n";
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{树状数组套线段树}
+
+\begin{lstlisting}[language=C++]
+int Y = 2e5;
+struct Node {
+    int l = 0, r = 0;
+    int ls = 0, rs = 0;
+    int sum = 0, add = 0;
+};
+vector<Node> in;
+int newNode(int l, int r) {
+    Node node;
+    node.l = l;
+    node.r = r;
+    in.push_back(node);
+    return in.size() - 1;
+}
+void push(int p) {
+    if (in[p].add == 0 || in[p].l == in[p].r) {
+        return;
+    }
+    int m = (in[p].l + in[p].r) >> 1;
+    if (!in[p].ls) {
+        in[p].ls = newNode(in[p].l, m);
+    }
+    if (!in[p].rs) {
+        in[p].rs = newNode(m + 1, in[p].r);
+    }
+    in[in[p].ls].sum += (m - in[p].l + 1) * in[p].add;
+    in[in[p].ls].add += in[p].add;
+    in[in[p].rs].sum += (in[p].r - m) * in[p].add;
+    in[in[p].rs].add += in[p].add;
+    in[p].add = 0;
+}
+void pull(int p) {
+    in[p].sum = 0;
+    if (in[p].ls) {
+        in[p].sum += in[in[p].ls].sum;
+    }
+    if (in[p].rs) {
+        in[p].sum += in[in[p].rs].sum;
+    }
+}
+int rangeModify(int p, int l, int r, int yl, int yr, int k) {
+    if (yr < l || r < yl) {
+        return p;
+    }
+    if (!p) {
+        p = newNode(l, r);
+    }
+    if (yl <= l && r <= yr) {
+        in[p].sum += (r - l + 1) * k;
+        in[p].add += k;
+        return p;
+    }
+    push(p);
+    int m = (l + r) >> 1;
+    in[p].ls = rangeModify(in[p].ls, l, m, yl, yr, k);
+    in[p].rs = rangeModify(in[p].rs, m + 1, r, yl, yr, k);
+    pull(p);
+    return p;
+}
+int rangeQuery(int p, int yl, int yr) {
+    if (!p || yr < in[p].l || in[p].r < yl) {
+        return 0;
+    }
+    if (yl <= in[p].l && in[p].r <= yr) {
+        return in[p].sum;
+    }
+    push(p);
+    return rangeQuery(in[p].ls, yl, yr) + rangeQuery(in[p].rs, yl, yr);
+}
+
+int X = 2e5;
+struct OutNode {
+    int inRoot = 0;
+};
+vector<OutNode> out;
+void add(int x, int yl, int yr, int k) {
+    assert(x > 0);
+    for (; x <= X; x += x & -x) {
+        out[x].inRoot = rangeModify(out[x].inRoot, 1, Y, yl, yr, k);
+    }
+}
+int pre(int x, int yl, int yr) {
+    assert(x <= X);
+    int res = 0;
+    for (; x; x -= x & -x) {
+        res += rangeQuery(out[x].inRoot, yl, yr);
+    }
+    return res;
+}
+\end{lstlisting}
+
 \subsection{ST 表}
 
 \begin{lstlisting}[language=C++]
