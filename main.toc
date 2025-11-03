@@ -41,27 +41,27 @@
 \contentsline {subsection}{\numberline {4.5}SA}{21}{subsection.4.5}%
 \contentsline {subsection}{\numberline {4.6}SAIS}{23}{subsection.4.6}%
 \contentsline {subsection}{\numberline {4.7}PAM}{24}{subsection.4.7}%
-\contentsline {section}{\numberline {5}图论}{25}{section.5}%
-\contentsline {subsection}{\numberline {5.1}最短路}{25}{subsection.5.1}%
-\contentsline {subsubsection}{\numberline {5.1.1}Dijkstra}{25}{subsubsection.5.1.1}%
-\contentsline {subsubsection}{\numberline {5.1.2}Bellman-Ford / SPFA}{25}{subsubsection.5.1.2}%
-\contentsline {subsubsection}{\numberline {5.1.3}Floyd}{25}{subsubsection.5.1.3}%
-\contentsline {subsection}{\numberline {5.2}Kruskal重构树}{25}{subsection.5.2}%
-\contentsline {subsection}{\numberline {5.3}基环树森林的直径}{26}{subsection.5.3}%
-\contentsline {subsection}{\numberline {5.4}树链剖分}{27}{subsection.5.4}%
-\contentsline {subsection}{\numberline {5.5}树哈希}{28}{subsection.5.5}%
-\contentsline {subsection}{\numberline {5.6}无向图连通性}{28}{subsection.5.6}%
-\contentsline {subsubsection}{\numberline {5.6.1}割点和桥}{28}{subsubsection.5.6.1}%
-\contentsline {subsubsection}{\numberline {5.6.2}e-DCC 和 v-DCC}{29}{subsubsection.5.6.2}%
-\contentsline {subsection}{\numberline {5.7}有向图连通性}{30}{subsection.5.7}%
-\contentsline {subsection}{\numberline {5.8}欧拉回路}{31}{subsection.5.8}%
-\contentsline {subsection}{\numberline {5.9}二分图}{32}{subsection.5.9}%
-\contentsline {subsection}{\numberline {5.10}网络流}{32}{subsection.5.10}%
-\contentsline {subsubsection}{\numberline {5.10.1}最大流}{32}{subsubsection.5.10.1}%
-\contentsline {subsubsection}{\numberline {5.10.2}最小费用最大流}{32}{subsubsection.5.10.2}%
-\contentsline {section}{\numberline {6}计算几何}{34}{section.6}%
-\contentsline {subsection}{\numberline {6.1}Point \& Line}{34}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}Polygon}{35}{subsection.6.2}%
-\contentsline {subsection}{\numberline {6.3}半平面交}{35}{subsection.6.3}%
-\contentsline {subsection}{\numberline {6.4}最小圆覆盖}{36}{subsection.6.4}%
-\contentsline {subsection}{\numberline {6.5}三维计算几何}{36}{subsection.6.5}%
+\contentsline {section}{\numberline {5}图论}{26}{section.5}%
+\contentsline {subsection}{\numberline {5.1}最短路}{26}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}Dijkstra}{26}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}Bellman-Ford / SPFA}{26}{subsubsection.5.1.2}%
+\contentsline {subsubsection}{\numberline {5.1.3}Floyd}{26}{subsubsection.5.1.3}%
+\contentsline {subsection}{\numberline {5.2}Kruskal重构树}{26}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}基环树森林的直径}{27}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}树链剖分}{28}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}树哈希}{29}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}无向图连通性}{29}{subsection.5.6}%
+\contentsline {subsubsection}{\numberline {5.6.1}割点和桥}{29}{subsubsection.5.6.1}%
+\contentsline {subsubsection}{\numberline {5.6.2}e-DCC 和 v-DCC}{30}{subsubsection.5.6.2}%
+\contentsline {subsection}{\numberline {5.7}有向图连通性}{31}{subsection.5.7}%
+\contentsline {subsection}{\numberline {5.8}欧拉回路}{32}{subsection.5.8}%
+\contentsline {subsection}{\numberline {5.9}二分图}{33}{subsection.5.9}%
+\contentsline {subsection}{\numberline {5.10}网络流}{33}{subsection.5.10}%
+\contentsline {subsubsection}{\numberline {5.10.1}最大流}{33}{subsubsection.5.10.1}%
+\contentsline {subsubsection}{\numberline {5.10.2}最小费用最大流}{33}{subsubsection.5.10.2}%
+\contentsline {section}{\numberline {6}计算几何}{35}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Point \& Line}{35}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Polygon}{36}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}半平面交}{36}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}最小圆覆盖}{37}{subsection.6.4}%
+\contentsline {subsection}{\numberline {6.5}三维计算几何}{37}{subsection.6.5}%

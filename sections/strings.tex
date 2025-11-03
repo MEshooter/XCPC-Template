@@ -622,14 +622,14 @@ struct SA {
 \subsection{PAM}
 
 \begin{lstlisting}[language=C++]
-s
 struct PAM {
     constexpr static int ALPHABET_SIZE = 26;
     struct Node {
         int len = 0;
         int link = 0;
         array<int, ALPHABET_SIZE> ch;
-        int siz = 0;
+        int cnt = 0;
+        int dif = 0, slink = 0;
     };
     vector<Node> t;
     int last;
@@ -668,14 +668,55 @@ struct PAM {
                 }
                 t[cur].link = t[p].ch[c];
             }
+            int pa = t[cur].link;
+            t[cur].dif = t[cur].len - t[pa].len;
+            if (t[cur].dif == t[pa].dif) {
+                t[cur].slink = t[pa].slink;
+            } else {
+                t[cur].slink = pa;
+            }
             last = cur;
         }
-        t[last].siz++;
+        t[last].cnt++;
     }
     Node &operator[](const int &id) {
         return t[id];
     }
 };
+
+int g[N], dp[N];
+
+void solve() {
+    string s;
+    cin >> s;
+    int n = s.size();
+
+    string t = "0";
+    for (int i = 0; i < n / 2; i++) {
+        t += s[i];
+        t += s[n - i - 1];
+    }
+
+    dp[0] = 1;
+    PAM pam;
+    for (int i = 1; i <= n; i++) {
+        pam.extend(t, i);
+        for (int p = pam.last; p > 1; p = pam[p].slink) {
+            int sl = pam[p].slink, pa = pam[p].link;
+            g[p] = dp[i - pam[sl].len - pam[p].dif];
+            if (pam[p].dif == pam[pa].dif) {
+                g[p] += g[pa];
+                g[p] %= mod;
+            }
+            if (i % 2 == 0) {
+                dp[i] += g[p];
+                dp[i] %= mod;
+            }
+        }
+    }
+
+    cout << dp[n] << "\n";
+}
 \end{lstlisting}
 
 % \begin{figure}
