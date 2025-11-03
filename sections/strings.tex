@@ -63,6 +63,46 @@ for(int i = n+1; i < s.size(); i++)
     if(pi[i] == n) v.push_back(i-2*n);
 \end{lstlisting}
 
+\begin{lstlisting}[language = C++]
+// 1-based kmp，nxt[i] = i失配应跳转的下标 = pre[i - 1]的最长border + 1
+vector<int> kmp(string s) {
+    int n = s.size() - 1;
+    vector<int> nxt(n + 2, 1);
+    for (int i = 2, j = 1; i <= n; i++) {
+        while (j > 1 && s[i] != s[j]) {
+            j = nxt[j];
+        }
+        j += (s[i] == s[j]);
+        nxt[i + 1] = j;
+    }
+    return nxt;
+}
+void solve() {
+    string s1, s2;
+    cin >> s1 >> s2;
+    int n1 = s1.size(), n2 = s2.size();
+
+    s1 = '0' + s1;
+    s2 = '0' + s2;
+
+    auto nxt = kmp(s2);
+    for (int i = 1, j = 1; i <= n1; i++) {
+        while (j > 1 && s1[i] != s2[j]) {
+            j = nxt[j];
+        }
+        j += (s1[i] == s2[j]);
+        if (j > n2) {
+            cout << i - n2 + 1 << "\n";
+            j = nxt[j];
+        }
+    }
+    for (int i = 2; i <= n2 + 1; i++) {
+        cout << nxt[i] - 1 << " \n"[i == n2 + 1];
+    }
+}
+// by lyh
+\end{lstlisting}
+
 \subsection{AC 自动机}
 
 $fail[u]$：状态 $u$ 的最长真后缀
@@ -204,16 +244,18 @@ struct ACAM {
 \subsection{SAM}
 
 \begin{lstlisting}[language=C++]
+
 struct SAM {
     static constexpr int ALPHABET_SIZE = 26;
     struct Node {
         int len = 0;
         int link = 0;
         array<int, ALPHABET_SIZE> ch;
-        int endpos = -1;
+        int siz = 0, rpos = -1;
+
     };
-    int last;
     vector<Node> t;
+    int last;
     SAM() {
         init();
     }
@@ -246,15 +288,64 @@ struct SAM {
                 for (; p && t[p].ch[c] == q; p = t[p].link) {
                     t[p].ch[c] = r;
                 }
+                t[r].rpos = t[q].rpos;
             }
         }
         last = cur;
-        t[cur].endpos = id;
+        t[cur].siz = 1;
+        t[cur].rpos = id;
     }
-    Node& operator[](const int &id) {
+    Node &operator[](const int &id) {
         return t[id];
     }
 };
+void build_rpos(int n, int tot) {
+    vector<int> cnt(n + 1), order(tot + 1);
+    for (int i = 2; i <= tot; i++) {
+        cnt[sam[i].len]++;
+    }
+    for (int i = 1; i <= n; i++) {
+        cnt[i] += cnt[i - 1];
+    }
+    for (int i = tot; i >= 1; i--) {
+        order[cnt[sam[i].len]--] = i;
+    }
+    for (int i = tot; i >= 1; i--) {
+        int u = order[i], p = sam[u].link;
+        sam[p].siz += sam[u].siz;
+        sam[p].rpos = max(sam[p].rpos, sam[u].rpos);
+    }
+}
+vector<array<int, 2>> debug_adj[N];
+void output(int u, int p) {
+    cout << u << ": \n";
+    for (auto [v, w] : debug_adj[u]) {
+        cout << u << "-" << v << ": " << char(w + 'a') << "\n";
+    }
+    int l = sam.t[p].len + 1;
+    int r = sam.t[u].len;
+    for (int len = l; len <= r; len++) {
+        cout << s.substr(sam.t[u].rpos - len + 1, len) << "\n";
+    }
+    cout << "\n";
+    for (auto [v, w] : debug_adj[u]) {
+        output(v, u);
+    }
+}
+void debug(int n, int tot) {
+    build_rpos(n, tot);
+    for (int i = 2; i <= tot; i++) {
+        int p = sam.t[i].link;
+        int c = s[sam.t[i].rpos - sam.t[p].len - 1] - 'a';
+        debug_adj[p].push_back({i, c});
+    }
+    output(1, 0);
+}
+
+s = '0' + s;
+for (int i = 1; i <= n; i++) {
+    sam.extend(s[i] - 'a', i);
+}
 \end{lstlisting}
 
 \begin{figure}[htbp]
@@ -531,14 +622,17 @@ struct SA {
 \subsection{PAM}
 
 \begin{lstlisting}[language=C++]
+s
 struct PAM {
     constexpr static int ALPHABET_SIZE = 26;
     struct Node {
-        int len;
-        int link;
+        int len = 0;
+        int link = 0;
         array<int, ALPHABET_SIZE> ch;
+        int siz = 0;
     };
     vector<Node> t;
+    int last;
     PAM() {
         init();
     }
@@ -547,17 +641,21 @@ struct PAM {
         t[1].len = -1;
         t[1].link = -1;
         t[0].link = 1;
+        last = 1;
     }
     int newNode() {
         t.emplace_back();
         return t.size() - 1;
     }
-    int extend(const string &s, int p, int i) {
+    void extend(const string &s, int i) {
+        int p = last;
         while (i - t[p].len - 1 < 0 || s[i - t[p].len - 1] != s[i]) {
             p = t[p].link;
         }
         int c = s[i] - 'a';
-        if (!t[p].ch[c]) {
+        if (t[p].ch[c]) {
+            last = t[p].ch[c];
+        } else {
             int cur = newNode();
             t[cur].len = t[p].len + 2;
             t[p].ch[c] = cur;
@@ -570,15 +668,14 @@ struct PAM {
                 }
                 t[cur].link = t[p].ch[c];
             }
-            return cur;
+            last = cur;
         }
-        return t[p].ch[c];
+        t[last].siz++;
     }
     Node &operator[](const int &id) {
         return t[id];
     }
 };
-// by lyh
 \end{lstlisting}
 
 % \begin{figure}

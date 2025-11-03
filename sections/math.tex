@@ -561,6 +561,75 @@ void solve() {
 }
 \end{lstlisting}
 
+\subsection{三元环/四元环计数}
+
+\begin{lstlisting}[language = C++]
+void solve() {
+    int n, m;
+    cin >> n >> m;
+
+    vector<vector<int>> adj(n + 1), tmp(n + 1);
+    vector<int> deg(n + 1);
+    for (int i = 0; i < m; i++) {
+        int u, v;
+        cin >> u >> v;
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+        deg[u]++;
+        deg[v]++;
+    }
+
+    for (int u = 1; u <= n; u++) {
+        for (auto v : adj[u]) {
+            if (deg[u] > deg[v] || deg[u] == deg[v] && u > v) {
+                tmp[u].push_back(v);
+            }
+        }
+    }
+
+    // 三元环
+    vector<bool> vis(n + 1);
+    int cnt3 = 0;
+    for (int u = 1; u <= n; u++) {
+        for (auto v : tmp[u]) {
+            vis[v] = true;
+        }
+        for (auto v : tmp[u]) {
+            for (auto w : tmp[v]) {
+                if (vis[w]) {
+                    cnt3++;
+                }
+            }
+        }
+        for (auto v : tmp[u]) {
+            vis[v] = false;
+        }
+    }
+    cout << cnt3 << "\n";
+
+    // 四元环
+    vector<int> cnt(n + 1);
+    int cnt4 = 0;
+    for (int u = 1; u <= n; u++) {
+        for (auto v : tmp[u]) {
+            for (auto w : adj[v]) {
+                if (deg[u] < deg[w] || deg[u] == deg[w] && u <= w) {
+                    continue;
+                }
+                cnt4 += cnt[w];
+                cnt[w]++;
+            }
+        }
+        for (auto v : tmp[u]) {
+            for (auto w : adj[v]) {
+                cnt[w] = 0;
+            }
+        }
+    }
+    cout << cnt4 << "\n";
+}
+\end{lstlisting}
+
 \subsection{自适应辛普森}
 
 辛普森公式：

@@ -363,6 +363,53 @@ pdi query(int k, int l, int r, ll x){
 }
 \end{lstlisting}
 
+
+\subsection{树状数组求第 $k$ 大}
+
+\begin{lstlisting}[language=C++]
+
+template<class T>
+struct Fenwick {
+    int n;
+    vector<T> f;
+    Fenwick(int n) {
+        init(n);
+    }
+    void init(int n) {
+        this->n = n;
+        f.assign(n, 0);
+    }
+    void add(int x, T k) {
+        assert(x > 0);
+        for (; x < n; x += x & -x) {
+            f[x] += k;
+        }
+    }
+    T pre(int x) {
+        assert(x < n);
+        T res {};
+        for (; x; x -= x & -x) {
+            res += f[x];
+        }
+        return res;
+    }
+    T rangeSum(int l, int r) {
+        return pre(r) - pre(l - 1);
+    }
+    int kth(int k) {
+        int x = 0;
+        T cur {};
+        for (int i = 1 << __lg(n); i; i >>= 1) {
+            if (x + i < n && cur + f[x + i] < k) {
+                cur += f[x + i];
+                x += i;
+            }
+        }
+        return x + 1;
+    }
+};
+\end{lstlisting}
+
 \subsection{笛卡尔树}
 
 每个节点为一对键值 $(k, w)$，其中 $k$ 满足二叉搜索树的性质，$w$ 满足堆的性质，通过单调栈维护右链建树，新的节点插入到右链，将 $w$ 大于该节点的子树作为左子树。

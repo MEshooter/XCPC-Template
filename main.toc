@@ -9,13 +9,14 @@
 \contentsline {subsection}{\numberline {2.2}可持久化线段树}{7}{subsection.2.2}%
 \contentsline {subsection}{\numberline {2.3}可持久化并查集}{8}{subsection.2.3}%
 \contentsline {subsection}{\numberline {2.4}李超线段树}{8}{subsection.2.4}%
-\contentsline {subsection}{\numberline {2.5}笛卡尔树}{9}{subsection.2.5}%
-\contentsline {subsection}{\numberline {2.6}pbds tree}{9}{subsection.2.6}%
-\contentsline {subsection}{\numberline {2.7}pbds pq}{9}{subsection.2.7}%
-\contentsline {subsection}{\numberline {2.8}树状数组套线段树}{10}{subsection.2.8}%
-\contentsline {subsection}{\numberline {2.9}ST 表}{10}{subsection.2.9}%
-\contentsline {subsection}{\numberline {2.10}XOR Hash}{11}{subsection.2.10}%
-\contentsline {subsection}{\numberline {2.11}动态图连通性 (线段树分治+可撤销并查集)}{11}{subsection.2.11}%
+\contentsline {subsection}{\numberline {2.5}树状数组求第 $k$ 大}{9}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}笛卡尔树}{9}{subsection.2.6}%
+\contentsline {subsection}{\numberline {2.7}pbds tree}{9}{subsection.2.7}%
+\contentsline {subsection}{\numberline {2.8}pbds pq}{10}{subsection.2.8}%
+\contentsline {subsection}{\numberline {2.9}树状数组套线段树}{10}{subsection.2.9}%
+\contentsline {subsection}{\numberline {2.10}ST 表}{11}{subsection.2.10}%
+\contentsline {subsection}{\numberline {2.11}XOR Hash}{11}{subsection.2.11}%
+\contentsline {subsection}{\numberline {2.12}动态图连通性 (线段树分治+可撤销并查集)}{11}{subsection.2.12}%
 \contentsline {section}{\numberline {3}数学}{13}{section.3}%
 \contentsline {subsection}{\numberline {3.1}组合数线性预处理}{13}{subsection.3.1}%
 \contentsline {subsection}{\numberline {3.2}线性筛}{13}{subsection.3.2}%
@@ -30,15 +31,16 @@
 \contentsline {subsection}{\numberline {3.8}拉格朗日插值（$\DOTSB \sum@ \slimits@ i^m$）}{17}{subsection.3.8}%
 \contentsline {subsection}{\numberline {3.9}Lucas 定理}{17}{subsection.3.9}%
 \contentsline {subsection}{\numberline {3.10}BSGS}{17}{subsection.3.10}%
-\contentsline {subsection}{\numberline {3.11}自适应辛普森}{17}{subsection.3.11}%
+\contentsline {subsection}{\numberline {3.11}三元环/四元环计数}{17}{subsection.3.11}%
+\contentsline {subsection}{\numberline {3.12}自适应辛普森}{18}{subsection.3.12}%
 \contentsline {section}{\numberline {4}字符串}{19}{section.4}%
 \contentsline {subsection}{\numberline {4.1}Hash}{19}{subsection.4.1}%
 \contentsline {subsection}{\numberline {4.2}KMP}{19}{subsection.4.2}%
 \contentsline {subsection}{\numberline {4.3}AC 自动机}{19}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4}SAM}{20}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.4}SAM}{21}{subsection.4.4}%
 \contentsline {subsection}{\numberline {4.5}SA}{21}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}SAIS}{22}{subsection.4.6}%
-\contentsline {subsection}{\numberline {4.7}PAM}{23}{subsection.4.7}%
+\contentsline {subsection}{\numberline {4.6}SAIS}{23}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}PAM}{24}{subsection.4.7}%
 \contentsline {section}{\numberline {5}图论}{25}{section.5}%
 \contentsline {subsection}{\numberline {5.1}最短路}{25}{subsection.5.1}%
 \contentsline {subsubsection}{\numberline {5.1.1}Dijkstra}{25}{subsubsection.5.1.1}%
