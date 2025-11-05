@@ -151,7 +151,7 @@ double* solve(int n, double a[][N], double b[], int &state){
 // 调用：double *x = solve(a, b, n, state);
 \end{lstlisting}
 
-B. 解异或方程组，带 `bitset' 优化，时间复杂度为 $O(\frac{n^3}{w})$。
+B. 解异或方程组，带 bitset 优化，时间复杂度为 $O(\frac{n^3}{w})$。
 
 \begin{lstlisting}[language=C++]
 int gauss_xor(int n, bitset<N> *a, bitset<N> &b){
