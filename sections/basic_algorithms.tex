@@ -83,6 +83,41 @@ void solve() {
 }
 \end{lstlisting}
 
+PowerShell 脚本对拍
+
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+
+g++ -O2 -std=c++11 data_generator.cpp -o data_generator
+g++ -O2 -std=c++11 my_solution.cpp -o my_solution
+g++ -O2 -std=c++11 brute_force.cpp -o brute_force
+
+test_count=0
+
+# 无限循环，直到发现错误或手动停止 (Ctrl+C)
+while true; do
+    ((test_count++))
+    echo "Running test #${test_count}"
+    ./data_generator > input.txt
+    ./my_solution < input.txt > my_output.txt
+    ./brute_force < input.txt > brute_force_output.txt
+
+    # diff 命令在文件相同时返回0，不同时返回非0
+    if diff my_output.txt brute_force_output.txt; then
+        echo "Accepted"
+    else
+        echo "Wrong Answer!"
+        echo "Input:"
+        cat input.txt
+        echo "My Output:"
+        cat my_output.txt
+        echo "Brute Force Output:"
+        cat brute_force_output.txt
+        break
+    fi
+done
+\end{lstlisting}
+
 \subsection{高精度}
 
 \begin{lstlisting}[language=C++]
