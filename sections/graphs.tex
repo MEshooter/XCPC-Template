@@ -654,6 +654,42 @@ struct VBCC {
 // by lyh
 \end{lstlisting}
 
+\begin{lstlisting}[language=C++]
+// 注意链式前向星中，边 和 next 数组需要开两倍的存储空间
+void add_edge(int x, int y){
+    ver[++tot] = y, nxt[tot] = head[x], head[x] = tot;
+}
+void tarjan(int x, int in_edge){
+    dfn[x] = low[x] = ++num;
+    int ch = 0;
+    for(int i = head[x]; i; i = nxt[i]){
+        int y = ver[i];
+        if(!dfn[y]){
+            ++ch;
+            stk.push(i);
+            tarjan(y, i);
+            low[x] = min(low[x], low[y]);
+            if(low[y] >= dfn[x]){
+                if(in_edge != 0) cut[x] = 1;
+                ++vdcc_num;
+                while(stk.size()){
+                    int t = stk.top();
+                    stk.pop();
+                    vdcc[t^1] = vdcc[t] = vdcc_num;
+                    if(t == i) break;
+                }
+            }
+        }
+        else if(dfn[y] < dfn[x] && i != (in_edge^1)){
+            stk.push(i);
+            low[x] = min(low[x], dfn[y]);
+        }
+    }
+    if(in_edge == 0 && ch > 1) cut[x] = 1;
+}
+// by zzy
+\end{lstlisting}
+
 \subsection{有向图连通性}
 
 Tarjan求强连通分量
@@ -817,11 +853,97 @@ void solve() {
 }
 \end{lstlisting}
 
+\subsection{线段树优化建图}
+
+用于处理区间连边。
+
+入树：大区间 $\rightarrow$ 小区间 $\rightarrow$ 点
+出树：点 $\rightarrow$ 小区间 $\rightarrow$ 大区间
+
+连边方向：出树 $\rightarrow$ 入树
+
+\begin{lstlisting}[language=C++]
+using ll = long long;
+const int N = 2e5+10;
+const ll INF = 0x3f3f3f3f3f3f3f3f;
+int tot, n, q, s;
+int inleaf[N], outleaf[N];
+ll d[N<<2];
+
+struct edge{
+    int v; ll w;
+    edge(int v, ll w): v(v), w(w) {}
+};
+vector<edge> g[N<<2];
+void add_edge(int u, int v, ll w){
+    g[u].emplace_back(v, w);
+}
+
+int new_node(){
+    return ++tot;
+}
+
+struct SegGraph{
+    int n, in[N<<2], out[N<<2];
+    void build(int p, int l, int r){
+        if(p == 1) n = r;
+        in[p] = new_node();
+        out[p] = new_node();
+        add_edge(in[p], out[p], 0);
+        if(l == r){
+            inleaf[l] = in[p];
+            outleaf[l] = out[p];
+            return;
+        }
+        int mid = (l+r)>>1;
+        build(p<<1, l, mid);
+        build(p<<1|1, mid+1, r);
+
+        add_edge(in[p], in[p<<1], 0);
+        add_edge(in[p], in[p<<1|1], 0);
+        add_edge(out[p<<1], out[p], 0);
+        add_edge(out[p<<1|1], out[p], 0);
+    }
+    // Direction: always out_tree -> in_tree
+    void node_to_range(int p, int l, int r, int L, int R, int node, ll w){
+        if(L <= l && r <= R){
+            add_edge(node, in[p], w);
+            return;
+        }
+        int mid = (l+r)>>1;
+        if(L <= mid)
+            node_to_range(p<<1, l, mid, L, R, node, w);
+        if(mid < R)
+            node_to_range(p<<1|1, mid+1, r, L, R, node, w);
+    }
+    void add_node_to_range(int L, int R, int node, ll w){
+        node_to_range(1, 1, n, L, R, node, w);
+    }
+    void range_to_node(int p, int l, int r, int L, int R, int node, ll w){
+        if(L <= l && r <= R){
+            add_edge(out[p], node, w);
+            return;
+        }
+        int mid = (l+r)>>1;
+        if(L <= mid)
+            range_to_node(p<<1, l, mid, L, R, node, w);
+        if(mid < R)
+            range_to_node(p<<1|1, mid+1, r, L, R, node, w);
+    }
+    void add_range_to_node(int L, int R, int node, ll w){
+        range_to_node(1, 1, n, L, R, node, w);
+    }
+    void node_to_node(int u, int v, ll w){
+        add_edge(outleaf[u], inleaf[v], w);
+    }
+}sg;
+\end{lstlisting}
+
 \subsection{二分图}
 
-\subsection{网络流}
+\section{网络流}
 
-\subsubsection{最大流}
+\subsection{最大流}
 
 \begin{lstlisting}[language=C++]
 template<class T>
@@ -923,7 +1045,7 @@ struct MaxFlow {
 // by lyh
 \end{lstlisting}
 
-\subsubsection{最小费用最大流}
+\subsection{最小费用最大流}
 
 \begin{lstlisting}[language=C++]
 template<class T>
